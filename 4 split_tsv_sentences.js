@@ -8,49 +8,51 @@ function cleanSentence(sentence) {
 function splitLongSentence(sentence) {
   console.log(`\n準備分割句子: "${sentence}"`);
   
-  sentence = cleanSentence(sentence);
-
-  // 如果句子中沒有句號，直接返回
-  if (!sentence.includes('.')) {
-    console.log(`沒有找到句號，返回原句: "${sentence}"`);
-    return [sentence];
-  }
-
   const words = sentence.split(/\s+/);
   
   // 如果句子少於或等於 10 個詞，直接返回
   if (words.length <= 10) {
     console.log(`句子較短（${words.length} 個詞），返回原句: "${sentence}"`);
-    return [sentence];
+    return [cleanSentence(sentence)];
   }
 
-  // 尋找所有句號的位置（排除最後一個字元是句號的情況）
+  // 尋找所有句號和逗號的位置
   const periodPositions = [];
+  const commaPositions = [];
+  let currentPosition = 0;
+  
   for (let i = 0; i < sentence.length; i++) {
     if (sentence[i] === '.' && i < sentence.length - 1 && sentence[i + 1] === ' ') {
       periodPositions.push(i);
     }
+    if (sentence[i] === ',' && i < sentence.length - 1 && sentence[i + 1] === ' ') {
+      commaPositions.push(i);
+    }
   }
 
-  // 如果沒有找到合適的句號位置，直接返回清理後的句子
-  if (periodPositions.length === 0) {
-    console.log(`沒有找到合適的句號位置，返回原句: "${sentence}"`);
-    return [sentence];
+  // 優先使用句號，如果沒有句號才使用逗號
+  let splitPositions = periodPositions.length > 0 ? periodPositions : commaPositions;
+  let punctuation = periodPositions.length > 0 ? '句號' : '逗號';
+
+  // 如果沒有找到任何分割點，直接返回清理後的句子
+  if (splitPositions.length === 0) {
+    console.log(`沒有找到合適的分割點，返回原句: "${sentence}"`);
+    return [cleanSentence(sentence)];
   }
 
-  // 找出最接近中間的句號位置
+  // 找出最接近中間的分割點
   const middlePosition = sentence.length / 2;
-  const nearestPeriod = periodPositions.reduce((prev, curr) => 
+  const nearestPosition = splitPositions.reduce((prev, curr) => 
     Math.abs(curr - middlePosition) < Math.abs(prev - middlePosition) ? curr : prev
   );
 
-  console.log(`Nearest period at position: ${nearestPeriod}`);
+  console.log(`最近的${punctuation}在位置: ${nearestPosition}`);
 
-  // 在最接近中間的句號處分割
-  const firstPart = sentence.slice(0, nearestPeriod + 1).trim();  // 包含句號
-  const secondPart = sentence.slice(nearestPeriod + 2).trim();    // 跳過句號和空格
+  // 在最接近中間的分割點處分割
+  const firstPart = sentence.slice(0, nearestPosition + 1).trim();  // 包含標點
+  const secondPart = sentence.slice(nearestPosition + 2).trim();    // 跳過標點和空格
 
-  console.log(`Split into: "${firstPart}" and "${secondPart}"`);
+  console.log(`分割為: "${firstPart}" 和 "${secondPart}"`);
 
   // 確保不遞迴處理空字串
   const result = [];
