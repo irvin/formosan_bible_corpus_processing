@@ -134,8 +134,8 @@ function processTSVFile(inputPath) {
 
     // 產生輸出檔案路徑
     const dir = path.dirname(inputPath);
-    const filename = path.basename(inputPath, '_normal.tsv');
-    const outputPath = path.join(dir, `${filename}_split.tsv`);
+    const filename = path.basename(inputPath);
+    const outputPath = path.join(dir, filename.replace('.tsv', '_split.tsv'));
     
     // 寫入處理後的句子
     const outputContent = processedSentences
