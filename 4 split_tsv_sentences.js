@@ -6,20 +6,19 @@ function cleanSentence(sentence) {
 }
 
 function splitLongSentence(sentence) {
-  console.log(`\n準備分割句子: "${sentence}"`);
+  // console.log(`\n準備分割句子: "${sentence}"`);
   
   const words = sentence.split(/\s+/);
   
   // 如果句子少於或等於 10 個詞，直接返回
   if (words.length <= 10) {
-    console.log(`句子較短（${words.length} 個詞），返回原句: "${sentence}"`);
+    // console.log(`句子較短（${words.length} 個詞），返回原句: "${sentence}"`);
     return [cleanSentence(sentence)];
   }
 
   // 尋找所有句號和逗號的位置
   const periodPositions = [];
   const commaPositions = [];
-  let currentPosition = 0;
   
   for (let i = 0; i < sentence.length; i++) {
     if (sentence[i] === '.' && i < sentence.length - 1 && sentence[i + 1] === ' ') {
@@ -36,7 +35,7 @@ function splitLongSentence(sentence) {
 
   // 如果沒有找到任何分割點，直接返回清理後的句子
   if (splitPositions.length === 0) {
-    console.log(`沒有找到合適的分割點，返回原句: "${sentence}"`);
+    // console.log(`沒有找到合適的分割點，返回原句: "${sentence}"`);
     return [cleanSentence(sentence)];
   }
 
@@ -46,13 +45,13 @@ function splitLongSentence(sentence) {
     Math.abs(curr - middlePosition) < Math.abs(prev - middlePosition) ? curr : prev
   );
 
-  console.log(`最近的${punctuation}在位置: ${nearestPosition}`);
+  // console.log(`最近的${punctuation}在位置: ${nearestPosition}`);
 
   // 在最接近中間的分割點處分割
   const firstPart = sentence.slice(0, nearestPosition + 1).trim();  // 包含標點
   const secondPart = sentence.slice(nearestPosition + 2).trim();    // 跳過標點和空格
 
-  console.log(`分割為: "${firstPart}" 和 "${secondPart}"`);
+  // console.log(`分割為: "${firstPart}" 和 "${secondPart}"`);
 
   // 確保不遞迴處理空字串
   const result = [];
@@ -160,8 +159,8 @@ function main() {
   const args = process.argv.slice(2);
   
   if (args.length < 1) {
-    console.error('請提供 _normal.tsv 檔案的路徑！');
-    console.error('使用方式：node split_bunun_sentences.js <檔案路徑>');
+    console.error('請提供 .tsv 檔案的路徑！');
+    console.error('使用方式：node 4\ split_tsv_sentences.js <檔案路徑>');
     process.exit(1);
   }
   
