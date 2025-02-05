@@ -15,7 +15,8 @@ function extractQuotes(sentence) {
     }
     if (sentence.slice(i, i + 2) === '>>' && isInQuote) {
       isInQuote = false;
-      if (currentQuote.trim()) {
+      // 只有當引用內容不包含單獨的 < 或 > 時才添加
+      if (currentQuote.trim() && !/<|>/g.test(currentQuote)) {
         quotes.push(currentQuote.trim());
       }
       currentQuote = '';
