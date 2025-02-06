@@ -3,32 +3,66 @@ const path = require('path');
 
 function extractQuotes(sentence) {
   const quotes = [];
-  let currentQuote = '';
-  let isInQuote = false;
+  
+  // 處理 << >> 格式的引用
+  function extractAngleQuotes() {
+    let currentQuote = '';
+    let isInQuote = false;
 
-  // 掃描句子尋找 << >> 包圍的內容
-  for (let i = 0; i < sentence.length; i++) {
-    if (sentence.slice(i, i + 2) === '<<') {
-      isInQuote = true;
-      i++; // 跳過第二個 <
-      continue;
-    }
-    if (sentence.slice(i, i + 2) === '>>' && isInQuote) {
-      isInQuote = false;
-      // 只有當引用內容不包含單獨的 < 或 > 時才添加
-      if (currentQuote.trim() && !/<|>/g.test(currentQuote)) {
-        quotes.push(currentQuote.trim());
+    for (let i = 0; i < sentence.length; i++) {
+      if (sentence.slice(i, i + 2) === '<<') {
+        isInQuote = true;
+        i++; // 跳過第二個 <
+        continue;
       }
-      currentQuote = '';
-      i++; // 跳過第二個 >
-      continue;
-    }
-    if (isInQuote) {
-      currentQuote += sentence[i];
+      if (sentence.slice(i, i + 2) === '>>' && isInQuote) {
+        isInQuote = false;
+        // 只有當引用內容不包含單獨的 < 或 > 時才添加
+        if (currentQuote.trim() && !/<|>/g.test(currentQuote)) {
+          quotes.push(currentQuote.trim());
+        }
+        currentQuote = '';
+        i++; // 跳過第二個 >
+        continue;
+      }
+      if (isInQuote) {
+        currentQuote += sentence[i];
+      }
     }
   }
 
-  return quotes;
+  // 處理 "" 格式的引用
+  function extractDoubleQuotes() {
+    let currentQuote = '';
+    let isInQuote = false;
+
+    for (let i = 0; i < sentence.length; i++) {
+      // 檢查開引號 "
+      if (sentence[i] === '“') {
+        isInQuote = true;
+        continue;
+      }
+      // 檢查閉引號 "
+      if (sentence[i] === '”' && isInQuote) {
+        isInQuote = false;
+        if (currentQuote.trim()) {
+          quotes.push(currentQuote.trim());
+        }
+        currentQuote = '';
+        continue;
+      }
+      if (isInQuote) {
+        currentQuote += sentence[i];
+      }
+    }
+  }
+
+  // 執行兩種引用格式的提取
+  extractAngleQuotes();
+  extractDoubleQuotes();
+
+  // 去除重複的引用
+  return [...new Set(quotes)];
 }
 
 function processTSVFile(inputPath) {
@@ -51,6 +85,8 @@ function processTSVFile(inputPath) {
     let processedQuotes = [];
     let totalOriginalSentences = 0;
     let totalQuotes = 0;
+    let angleQuotesCount = 0;
+    let doubleQuotesCount = 0;
 
     // 處理每一行
     for (let i = 0; i < lines.length; i++) {
@@ -65,6 +101,12 @@ function processTSVFile(inputPath) {
       if (!sentence) continue;
 
       totalOriginalSentences++;
+      
+      // 計算不同類型的引用數量
+      const hasAngleQuotes = sentence.includes('<<');
+      const hasDoubleQuotes = sentence.includes('“') || sentence.includes('”');
+      if (hasAngleQuotes) angleQuotesCount++;
+      if (hasDoubleQuotes) doubleQuotesCount++;
       
       // 提取引用句
       const quotes = extractQuotes(sentence);
@@ -106,6 +148,8 @@ function processTSVFile(inputPath) {
       originalCount: totalOriginalSentences,
       quotesCount: totalQuotes,
       uniqueQuotesCount: uniqueQuotes.length,
+      angleQuotesCount,
+      doubleQuotesCount,
       outputFile: outputPath
     };
     
@@ -133,7 +177,10 @@ function main() {
   if (result) {
     console.log('\n處理完成！');
     console.log(`原始句子數: ${result.originalCount}`);
-    console.log(`提取引用句數: ${result.uniqueQuotesCount}`);
+    console.log(`包含 << >> 引用的句子數: ${result.angleQuotesCount}`);
+    console.log(`包含 "" 引用的句子數: ${result.doubleQuotesCount}`);
+    console.log(`提取引用句數: ${result.quotesCount}`);
+    console.log(`去重後引用句數: ${result.uniqueQuotesCount}`);
     console.log(`已儲存至: ${path.basename(result.outputFile)}`);
   }
 }
