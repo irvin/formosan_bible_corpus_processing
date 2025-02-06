@@ -31,7 +31,7 @@ function extractQuotes(sentence) {
     }
   }
 
-  // 處理 "" 格式的引用
+  // 處理 “ ” 格式的引用
   function extractDoubleQuotes() {
     let currentQuote = '';
     let isInQuote = false;
@@ -45,7 +45,8 @@ function extractQuotes(sentence) {
       // 檢查閉引號 "
       if (sentence[i] === '”' && isInQuote) {
         isInQuote = false;
-        if (currentQuote.trim()) {
+        // 只有當引用內容不包含單引號時才添加
+        if (currentQuote.trim() && !currentQuote.includes('‘') && !currentQuote.includes('’')) {
           quotes.push(currentQuote.trim());
         }
         currentQuote = '';
@@ -103,7 +104,7 @@ function processTSVFile(inputPath) {
       totalOriginalSentences++;
       
       // 計算不同類型的引用數量
-      const hasAngleQuotes = sentence.includes('<<');
+      const hasAngleQuotes = sentence.includes('<<') || sentence.includes('>>');
       const hasDoubleQuotes = sentence.includes('“') || sentence.includes('”');
       if (hasAngleQuotes) angleQuotesCount++;
       if (hasDoubleQuotes) doubleQuotesCount++;
