@@ -1,4 +1,41 @@
 const fs = require('fs');
+const { bookCode } = require('./0_聖經選句.js');
+
+// 建立書卷順序對照表
+const bookOrder = Object.fromEntries(
+  Object.entries(bookCode).map(([book, code], index) => [book, index])
+);
+
+// 解析聖經章節參考
+function parseReference(reference) {
+  // 分離書卷名稱和章節
+  const match = reference.match(/^(.+?)(\d+):(\d+)$/);
+  if (!match) return { book: reference, chapter: 0, verse: 0 };
+  
+  const [, book, chapter, verse] = match;
+  return {
+    book,
+    chapter: parseInt(chapter),
+    verse: parseInt(verse)
+  };
+}
+
+// 比較兩個章節的順序
+function compareReferences(a, b) {
+  const refA = parseReference(a.reference);
+  const refB = parseReference(b.reference);
+  
+  // 先比較書卷名稱（使用 bookOrder 的順序）
+  const orderA = bookOrder[refA.book] ?? Number.MAX_SAFE_INTEGER;
+  const orderB = bookOrder[refB.book] ?? Number.MAX_SAFE_INTEGER;
+  if (orderA !== orderB) return orderA - orderB;
+  
+  // 再比較章
+  if (refA.chapter !== refB.chapter) return refA.chapter - refB.chapter;
+  
+  // 最後比較節
+  return refA.verse - refB.verse;
+}
 
 function processVerses(inputFile) {
   // 讀取 JSON 檔案
@@ -31,6 +68,9 @@ function processVerses(inputFile) {
   
   // 為每種語言建立 TSV 檔案
   Object.entries(languageData).forEach(([language, verses]) => {
+    // 先對經文進行排序
+    verses.sort(compareReferences);
+    
     // 建立 TSV 內容（參考編號 \t 經文內容）
     const tsvContent = verses
       .map(verse => `${verse.reference}\t${verse.text}`)
