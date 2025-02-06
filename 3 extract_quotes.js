@@ -79,13 +79,25 @@ function processTSVFile(inputPath) {
       });
     }
 
+    // 在寫入檔案前去除重複的引用句
+    const uniqueQuotes = [];
+    const seen = new Set();
+    
+    processedQuotes.forEach(item => {
+      // 使用引用文字作為唯一標識
+      if (!seen.has(item.text)) {
+        seen.add(item.text);
+        uniqueQuotes.push(item);
+      }
+    });
+    
     // 產生輸出檔案路徑
     const dir = path.dirname(inputPath);
     const filename = path.basename(inputPath, '_special.tsv');
     const outputPath = path.join(dir, `${filename}_quotes.tsv`);
     
     // 寫入處理後的引用句
-    const outputContent = processedQuotes
+    const outputContent = uniqueQuotes
       .map(item => `${item.reference}\t${item.text}`)
       .join('\n');
     fs.writeFileSync(outputPath, outputContent);
@@ -93,6 +105,7 @@ function processTSVFile(inputPath) {
     return {
       originalCount: totalOriginalSentences,
       quotesCount: totalQuotes,
+      uniqueQuotesCount: uniqueQuotes.length,
       outputFile: outputPath
     };
     
@@ -120,8 +133,7 @@ function main() {
   if (result) {
     console.log('\n處理完成！');
     console.log(`原始句子數: ${result.originalCount}`);
-    console.log(`提取引用句數: ${result.quotesCount}`);
-    console.log(`提取率: ${((result.quotesCount / result.originalCount) * 100).toFixed(2)}%`);
+    console.log(`提取引用句數: ${result.uniqueQuotesCount}`);
     console.log(`已儲存至: ${path.basename(result.outputFile)}`);
   }
 }
