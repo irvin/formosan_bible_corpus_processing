@@ -122,6 +122,8 @@ function processTSVFile(inputPath) {
       
       // 檢查是否為短句
       const words = sentence.split(/\s+/);
+      if (words.length <= 2) continue;
+      
       if (words.length <= 10) {
         totalShortSentences++;
         shortSentences.push({
@@ -132,9 +134,10 @@ function processTSVFile(inputPath) {
       else {
         // 只對長句進行分割
         const splitParts = splitSentence(sentence);
-        totalSplitSentences += splitParts.length;
+        const validParts = splitParts.filter(part => part.split(/\s+/).length >= 3);
+        totalSplitSentences += validParts.length;
         
-        splitParts.forEach(part => {
+        validParts.forEach(part => {
           processedSentences.push({
             reference: columns[0],
             text: part
