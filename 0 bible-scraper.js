@@ -34,7 +34,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const fs = require('fs');
 const path = require('path');
-const { langCode, bookCode, chapList } = require('./聖經選句.js');
+const { langCode, bookCode, chapList } = require('./0\ 聖經選句.js');
 
 // 設定基本參數
 const BASE_URL = 'https://cb.fhl.net/read1.php';
