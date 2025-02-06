@@ -67,7 +67,7 @@ function splitLongSentence(sentence) {
 
 function splitSentence(sentence) {
   // 定義分割用的標點符號
-  const separators = ['?', '!', ';'];
+  const separators = ['?', '!', ';', ':'];
   
   // 先在分隔符號處分割
   let parts = [sentence];
@@ -101,8 +101,10 @@ function processTSVFile(inputPath) {
     }
 
     let processedSentences = [];
+    let shortSentences = [];
     let totalOriginalSentences = 0;
     let totalSplitSentences = 0;
+    let totalShortSentences = 0;
 
     // 處理每一行
     for (let i = 0; i < lines.length; i++) {
@@ -118,34 +120,53 @@ function processTSVFile(inputPath) {
 
       totalOriginalSentences++;
       
-      // 分割句子
-      const splitParts = splitSentence(sentence);
-      totalSplitSentences += splitParts.length;
-      
-      // 為每個分割後的句子保留原始參考
-      splitParts.forEach(part => {
-        processedSentences.push({
+      // 檢查是否為短句
+      const words = sentence.split(/\s+/);
+      if (words.length <= 10) {
+        totalShortSentences++;
+        shortSentences.push({
           reference: columns[0],
-          text: part
+          text: cleanSentence(sentence)
         });
-      });
+      } 
+      else {
+        // 只對長句進行分割
+        const splitParts = splitSentence(sentence);
+        totalSplitSentences += splitParts.length;
+        
+        splitParts.forEach(part => {
+          processedSentences.push({
+            reference: columns[0],
+            text: part
+          });
+        });
+      }
     }
 
     // 產生輸出檔案路徑
     const dir = path.dirname(inputPath);
     const filename = path.basename(inputPath);
-    const outputPath = path.join(dir, filename.replace('.tsv', '_split.tsv'));
+    const splitOutputPath = path.join(dir, filename.replace('.tsv', '_split.tsv'));
+    const shortOutputPath = path.join(dir, filename.replace('.tsv', '_short.tsv'));
     
     // 寫入處理後的句子
-    const outputContent = processedSentences
+    const splitOutputContent = processedSentences
       .map(item => `${item.reference}\t${item.text}`)
       .join('\n');
-    fs.writeFileSync(outputPath, outputContent);
+    fs.writeFileSync(splitOutputPath, splitOutputContent);
+    
+    // 寫入短句
+    const shortOutputContent = shortSentences
+      .map(item => `${item.reference}\t${item.text}`)
+      .join('\n');
+    fs.writeFileSync(shortOutputPath, shortOutputContent);
     
     return {
       originalCount: totalOriginalSentences,
       splitCount: totalSplitSentences,
-      outputFile: outputPath
+      shortCount: totalShortSentences,
+      splitOutputFile: splitOutputPath,
+      shortOutputFile: shortOutputPath
     };
     
   } catch (error) {
@@ -174,7 +195,9 @@ function main() {
     console.log(`原始句子數: ${result.originalCount}`);
     console.log(`分割後句子數: ${result.splitCount}`);
     console.log(`分割率: ${((result.splitCount / result.originalCount) * 100).toFixed(2)}%`);
-    console.log(`已儲存至: ${path.basename(result.outputFile)}`);
+    console.log(`分割句子已儲存至: ${path.basename(result.splitOutputFile)}`);
+    console.log(`短句數量: ${result.shortCount}`);
+    console.log(`短句已儲存至: ${path.basename(result.shortOutputFile)}`);
   }
 }
 
