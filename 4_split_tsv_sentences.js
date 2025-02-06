@@ -78,9 +78,13 @@ function splitSentence(sentence) {
   // 遞迴處理所有長句
   parts = parts.flatMap(splitLongSentence);
 
+  // 過濾掉分割後仍然過長的句子，以及太短的句子
   return parts
     .map(cleanSentence)
-    .filter(part => part.length > 0);
+    .filter(part => {
+      const wordCount = part.split(/\s+/).length;
+      return wordCount >= 3 && wordCount <= 10;  // 只保留 3-10 個詞的句子
+    });
 }
 
 function processTSVFile(inputPath) {
@@ -105,6 +109,7 @@ function processTSVFile(inputPath) {
     let totalOriginalSentences = 0;
     let totalSplitSentences = 0;
     let totalShortSentences = 0;
+    let totalDiscardedSentences = 0;
 
     // 處理每一行
     for (let i = 0; i < lines.length; i++) {
@@ -134,15 +139,19 @@ function processTSVFile(inputPath) {
       else {
         // 只對長句進行分割
         const splitParts = splitSentence(sentence);
-        const validParts = splitParts.filter(part => part.split(/\s+/).length >= 3);
-        totalSplitSentences += validParts.length;
         
-        validParts.forEach(part => {
-          processedSentences.push({
-            reference: columns[0],
-            text: part
+        if (splitParts.length === 0) {
+          totalDiscardedSentences++;  // 如果分割後沒有合適的句子，計數加一
+        } else {
+          totalSplitSentences += splitParts.length;
+          
+          splitParts.forEach(part => {
+            processedSentences.push({
+              reference: columns[0],
+              text: part
+            });
           });
-        });
+        }
       }
     }
 
@@ -168,6 +177,7 @@ function processTSVFile(inputPath) {
       originalCount: totalOriginalSentences,
       splitCount: totalSplitSentences,
       shortCount: totalShortSentences,
+      discardedCount: totalDiscardedSentences,
       splitOutputFile: splitOutputPath,
       shortOutputFile: shortOutputPath
     };
@@ -184,7 +194,7 @@ function main() {
   
   if (args.length < 1) {
     console.error('請提供 .tsv 檔案的路徑！');
-    console.error('使用方式：node 4\ split_tsv_sentences.js <檔案路徑>');
+    console.error('使用方式：node 4_split_tsv_sentences.js <檔案路徑>');
     process.exit(1);
   }
   
@@ -198,6 +208,7 @@ function main() {
     console.log(`原始句子數: ${result.originalCount}`);
     console.log(`分割後句子數: ${result.splitCount}`);
     console.log(`分割率: ${((result.splitCount / result.originalCount) * 100).toFixed(2)}%`);
+    console.log(`過短被捨棄的句子數: ${result.discardedCount}`);
     console.log(`分割句子已儲存至: ${path.basename(result.splitOutputFile)}`);
     console.log(`短句數量: ${result.shortCount}`);
     console.log(`短句已儲存至: ${path.basename(result.shortOutputFile)}`);
