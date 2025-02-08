@@ -35,9 +35,9 @@ function processBununBible(inputPath) {
       if (!sentence) continue;
 
       totalSentences++;
-      
-      // 檢查是否包含除了 , . ; - ? : ʼ 以外的標點
-      if (/[^\w\s,\.\;\-\?\:\ʼ]/.test(sentence)) {
+
+      // 檢查是否包含除了 , . ; - ? : ʼ ' 以外的標點
+      if (/[^\w\s,.\-;?:ʼ'!éěēèêëɨʉÉĚĔĒÈÊË]/u.test(sentence)) {
         specialPunctuationSentences.push({
           reference: columns[0],
           text: sentence
