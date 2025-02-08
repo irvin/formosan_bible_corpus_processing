@@ -128,40 +128,40 @@ function parseHtml(html) {
 // 抓取單一章節的所有語言版本
 async function fetchChapter(chapter) {
     const verses = [];
+    const pageContents = {};
     
-    // 取得該章所有經節
-    for (let verse = 1; verse <= 45; verse++) { // 馬可福音最長的章節有45節
-        const reference = `馬可福音${chapter}:${verse}`;
+    // 先平行抓取所有語言版本的整章內容
+    await Promise.all(
+        Object.entries(langCode).map(async ([langKey, langName]) => {
+            const urlInfo = buildUrl(chapter, langKey);
+            await delay(DELAY); // 仍然保持延遲以避免伺服器負載過大
+            const content = await fetchPage(urlInfo);
+            if (content) {
+                pageContents[langName] = parseHtml(content);
+            }
+        })
+    );
+
+    // 整理每一節的內容
+    for (let verse = 1; verse <= 45; verse++) {
+        const verseKey = `${chapter}:${verse}`;
+        const reference = `馬可福音${verseKey}`;
         const verseResult = {
             reference: reference,
             translations: {}
         };
 
-        for (const [langKey, langName] of Object.entries(langCode)) {
-            // 建立 URL 和參數信息
-            const urlInfo = buildUrl(chapter, langKey);
-            
-            // 等待延遲
-            await delay(DELAY);
-            
-            // 抓取頁面
-            console.log(`正在抓取 ${reference} - ${langName}`);
-            const pageContent = await fetchPage(urlInfo);
-            
-            if (pageContent) {
-                const allVerses = parseHtml(pageContent);
-                const verseKey = `${chapter}:${verse}`;
-                if (allVerses[verseKey]) {
-                    verseResult.translations[langName] = allVerses[verseKey];
-                }
-            } else {
-                console.error(`錯誤：無法抓取 ${reference} - ${langName}`);
+        // 從已抓取的內容中提取該節經文
+        for (const [langName, content] of Object.entries(pageContents)) {
+            if (content[verseKey]) {
+                verseResult.translations[langName] = content[verseKey];
             }
         }
 
         // 只有當有經文內容時才加入結果
         if (Object.keys(verseResult.translations).length > 0) {
             verses.push(verseResult);
+            console.log(`處理完成 ${reference}`);
         }
     }
 
@@ -174,16 +174,17 @@ async function main() {
     const totalChapters = 16; // 馬可福音共16章
     
     for (let chapter = 1; chapter <= totalChapters; chapter++) {
+        console.log(`\n開始處理第 ${chapter} 章`);
         const chapterVerses = await fetchChapter(chapter);
         results.push(...chapterVerses);
-        console.log(`完成第 ${chapter} 章\n`);
+        console.log(`完成第 ${chapter} 章，共處理 ${chapterVerses.length} 節\n`);
     }
 
     // 所有章節處理完後才儲存一次
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     await fs.promises.writeFile(
-      `bible-verses-teldreka-${timestamp}.json`,
-      JSON.stringify(results, null, 2),
+        `bible-verses-teldreka-${timestamp}.json`,
+        JSON.stringify(results, null, 2),
         'utf8'
     );
 
