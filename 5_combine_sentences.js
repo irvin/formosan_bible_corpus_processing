@@ -66,18 +66,25 @@ function combineSentences(prefix) {
     const normalSplit = readTSVFile(path.join(baseDir, `${prefix}_normal_split.tsv`));
     const quotesSplit = readTSVFile(path.join(baseDir, `${prefix}_quotes_split.tsv`));
 
-    // 檢查檔案是否都存在且有內容
-    if (!normalShort.length || !quotesShort.length || !normalSplit.length || !quotesSplit.length) {
-        console.error(`錯誤：某些輸入檔案不存在或是空的`);
+    // 檢查必要檔案是否存在且有內容
+    if (!normalShort.length || !quotesShort.length) {
+        console.error(`錯誤：必要的短句檔案不存在或是空的`);
         process.exit(1);
+    }
+
+    // 檢查分割句檔案
+    if (!normalSplit.length && !quotesSplit.length) {
+        console.log(`警告：找不到分割句檔案或檔案為空`);
     }
 
     // 合併所有短句
     const allShortSentences = [...normalShort, ...quotesShort];
 
-    // 合併所有分割句並隨機選擇100句
+    // 合併所有分割句並隨機選擇100句（如果有的話）
     const allSplitSentences = [...normalSplit, ...quotesSplit];
-    const randomSplitSentences = getRandomElements(allSplitSentences, 100);
+    const randomSplitSentences = allSplitSentences.length > 0 
+        ? getRandomElements(allSplitSentences, 100)
+        : [];
 
     // 合併最終結果並按章節順序排序
     const finalSentences = [...allShortSentences, ...randomSplitSentences]
